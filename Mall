@@ -1,0 +1,68 @@
+#Load the dataset and view the first three rows
+import pandas as pd
+df_mall = pd.read_csv("/kaggle/input/customer-segmentation-tutorial-in-python/Mall_Customers.csv", index_col = "CustomerID")
+df_mall.head(3)
+
+#Visualize all 4 columns
+import matplotlib.pyplot as plt
+import seaborn as sns
+plt.figure(1 , figsize = (10 , 5) )
+sns.scatterplot(
+    data=df_mall,
+    x="Spending Score (1-100)",
+    y="Annual Income (k$)",
+    hue="Gender",
+    size="Age",
+    palette="Set2"
+);
+
+#Normalize the dataset, drop the gender and age columns
+from sklearn import preprocessing
+X = df_mall.drop(["Gender", "Age"], axis = 1)
+X_norm = preprocessing.normalize(X)
+
+#Finding the optimal value of the K-Means algorithm using the elbow method
+import numpy as np
+from sklearn.cluster import KMeans
+def elbow_plot(data,clusters):
+    inertia = []
+    for n in range(1, clusters):
+        algorithm = KMeans(
+            n_clusters=n,
+            init="k-means++",
+            random_state=125,
+        )
+        algorithm.fit(data)
+        inertia.append(algorithm.inertia_)
+    # Plot
+    plt.plot(np.arange(1 , clusters) , inertia , 'o')
+    plt.plot(np.arange(1 , clusters) , inertia , '-' , alpha = 0.5)
+    plt.xlabel('Number of Clusters') , plt.ylabel('Inertia')
+    plt.show();
+elbow_plot(X_norm,10)
+
+#Using the KMeans algorithm, providing 3 for the K value based on the previous plot results
+algorithm = KMeans(n_clusters=3, init="k-means++", random_state=125)
+algorithm.fit(X_norm)
+labels = algorithm.labels_
+
+#visualize the clusters
+sns.scatterplot(data = X, x = 'Spending Score (1-100)', y = 'Annual Income (k$)', hue = labels, palette="Set2");
+
+#Using age and spending score as the features for the clustering algorithm
+X = df_mall.drop(["Gender","Annual Income (k$)"],axis=1)
+X_norm = preprocessing.normalize(X)
+
+#visualizing using the elbow method again
+elbow_plot(X_norm,10)
+
+#training the algorithm on three clusters again based off the elbow plot
+algorithm = KMeans(n_clusters = 3, init = "k-means++", random_state = 125)
+algorithm.fit(X_norm)
+labels = algorithm.labels_
+
+#visualizing the new clusters
+sns.scatterplot(data = X, x = 'Age', y = 'Spending Score (1-100)', hue = labels, palette="Set2");
+
+#visualizing the spending scores via boxplot
+sns.boxplot(x = labels, y = X['Spending Score (1-100)'])
